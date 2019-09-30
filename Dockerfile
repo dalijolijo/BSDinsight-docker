@@ -70,7 +70,7 @@ RUN mkdir -p /home/bitsend/src/ && \
 
 # Compiling BitSend Sources
 RUN cd /home/bitsend/BitSend && \
-    git checkout Insight-Patch-0_14 && \
+    git checkout 0.17-test && \
     ./autogen.sh && ./configure --disable-dependency-tracking --enable-tests=no --without-gui && make
 
 # Strip bitsendd binary 
