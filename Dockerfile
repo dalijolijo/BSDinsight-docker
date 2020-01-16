@@ -49,6 +49,7 @@ RUN apt-get install -y  apt-utils \
                         autoconf \
                         automake \
                         autotools-dev \
+			bsdmainutils \
                         build-essential \
                         libboost-all-dev \
                         libevent-dev \
@@ -56,6 +57,7 @@ RUN apt-get install -y  apt-utils \
                         libssl-dev \
                         libtool \
                         pkg-config \
+			python3 \
                         software-properties-common
 RUN sudo add-apt-repository ppa:bitcoin/bitcoin
 RUN sudo apt-get update && \
@@ -66,15 +68,16 @@ RUN apt-get install -y libdb4.8-dev \
 # Cloning BitSend Git repository
 RUN mkdir -p /home/bitsend/src/ && \
     cd /home/bitsend && \
-    git clone https://github.com/LIMXTEC/BitSend.git
+    git clone https://github.com/dalijolijo/BitSend.git
 
 # Compiling BitSend Sources
 RUN cd /home/bitsend/BitSend && \
-    git checkout Insight-Patch-0_14 && \
-    ./autogen.sh && ./configure --disable-dependency-tracking --enable-tests=no --without-gui && make
+    git checkout 0.18 && \
+    ./autogen.sh && ./configure --disable-hardening --disable-dependency-tracking --enable-tests=no --without-gui && make && make install
 
 # Strip bitsendd binary 
 RUN cd /home/bitsend/BitSend/src && \
+    mv bitcoind bitsendd && \
     strip bitsendd && \
     chmod 775 bitsendd && \
     cp bitsendd /home/bitsend/src/
@@ -92,6 +95,7 @@ ENV BSD_NET "/home/bitsend/bitcore-livenet"
 
 # Create Bitcore Node
 # Hint: bitcore-node create -d <bitcoin-data-dir> mynode
+RUN ls ${BSD_NET}
 RUN cd ${BSD_NET}/bin && \
     chmod 777 bitcore-node && \
     sync && \
@@ -118,15 +122,15 @@ RUN cd ${BSD_NET}/bin/mynode/node_modules && \
 # Remove duplicate node_module 'bitcore-lib' to prevent startup errors such as:
 #   "More than one instance of bitcore-lib found. Please make sure to require bitcore-lib and check that submodules do
 #   not also include their own bitcore-lib dependency."
-RUN rm -Rf ${BSD_NET}/bin/mynode/node_modules/bitcore-node-mec/node_modules/bitcore-lib-mec && \
-    rm -Rf ${BSD_NET}/bin/mynode/node_modules/insight-api-mec/node_modules/bitcore-lib-mec && \
-    rm -Rf ${BSD_NET}/bin/mynode/node_modules/bitcore-lib-mec
+RUN rm -Rf ${BSD_NET}/bin/mynode/node_modules/bitcore-node-bsd/node_modules/bitcore-lib-bsd && \
+    rm -Rf ${BSD_NET}/bin/mynode/node_modules/insight-api-bsd/node_modules/bitcore-lib-bsd && \
+    rm -Rf ${BSD_NET}/bin/mynode/node_modules/bitcore-lib-bsd
 
 # Install bitcore-lib-bsd (not needed: part of another module)
-RUN cd ${BSD_NET}/bin/mynode/node_modules && \
-    git clone https://github.com/${GIT}/bitcore-lib-bsd.git && \
-    cd ${BSD_NET}/bin/mynode/node_modules/bitcore-lib-bsd && \
-    npm install
+#RUN cd ${BSD_NET}/bin/mynode/node_modules && \
+#    git clone https://github.com/${GIT}/bitcore-lib-bsd.git && \
+#    cd ${BSD_NET}/bin/mynode/node_modules/bitcore-lib-bsd && \
+#    npm install
 
 # Install bitcore-build-bsd
 RUN cd ${BSD_NET}/bin/mynode/node_modules && \
@@ -145,7 +149,7 @@ RUN cd ${BSD_NET}/bin/mynode/node_modules && \
 #    npm install
 # Configuration needed before start
 #RUN npm start
-#RUN rm -Rf ${BSD_NET}/bin/mynode/node_modules/bitcore-wallet-service/node_modules/bitcore-lib-mec
+#RUN rm -Rf ${BSD_NET}/bin/mynode/node_modules/bitcore-wallet-service/node_modules/bitcore-lib-bsd
 
 # Cleanup
 RUN apt-get -y remove --purge build-essential && \
